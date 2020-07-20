@@ -26,10 +26,14 @@ app.use(bodypaser.urlencoded({extended: false}))
 app.use(bodypaser.json())
 app.use('/public', express.static(path.join(__dirname,'./static')))
 //引入路由
+const friendRequestRouter =require('./router/friendRequestRouter')
+const friendListRouter =require('./router/friendListRouter')
 const userRouter =require('./router/userRouter')
 const fileRouter =require('./router/fileRouter')
 app.use('/user', userRouter)
 app.use('/file', fileRouter)
+app.use('/friend', friendRequestRouter)
+app.use('/friendlist', friendListRouter)
 
 app.listen(3000,()=>{
     console.log('server start')

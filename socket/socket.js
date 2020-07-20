@@ -1,3 +1,5 @@
+const chatData =require('../db/model/dataList.js')
+const Chat =require('../db/model/ChatList.js')
 module.exports =function(io){
     var socketList ={};
     var users=[];
@@ -6,22 +8,21 @@ module.exports =function(io){
     io.sockets.on('connection', (socket) => {
         console.log('socket 连接成功');
        
-        socket.on('join',name =>{
+        socket.on('join',data =>{
             //console.log(socket)
-            if(!(name in socketList)){
-                console.log(name)
-                socket.name = name;
-                socketList[name] =socket;
-                users.push(name)
-                member++
+            if(!(data.userId in socketList)){
+                console.log(data)
+                socket.userId = data.userId;
+                socketList[data.userId] =socket;
+                users.push(data.name)
                 //console.log(socketList)
-                socket.broadcast.emit('welcome',name)
-                socket.emit('welcome',name)
+                socket.broadcast.emit('welcome',data.name)
+                socket.emit('welcome',data.name)
             }else{
-                socket.name = name;
-                socketList[name] =socket
-                socket.broadcast.emit('welcome',name)
-                socket.emit('welcome',name)
+                socket.userId = data.userId;
+                socketList[data.userId] =socket
+                socket.broadcast.emit('welcome',data.name)
+                socket.emit('welcome',data.name)
             }
         })
 
@@ -34,9 +35,35 @@ module.exports =function(io){
         //一对一聊天
         socket.on('private message',data =>{
             console.log(data)
-            if(data.userTo in socketList) {
-                socketList[data.userTo].emit('receive private message', data);
-            }
+            let Data1 = Object.assign({}, data);
+            Data1.name =data.user
+            let Data2 = Object.assign({}, data);
+            Data2.name =data.user
+            Data2.gid =Data2.userId
+            Data2.userId =Data2.uid
+            Data2.uid =Data2.gid
+            Data2.id =1
+            //console.log(Data1,Data2)
+            Chat.find({userId:data.uid,uid:data.userId})
+            .then((Data)=>{
+               // console.log(Data)
+                chatData.insertMany([Data1,Data2])
+                Chat.updateOne({_id:Data[0]._id},{news:data.msg})
+                .then((msg)=>{
+                    console.log(msg)
+                    if(data.uid in socketList) {  
+                        socketList[data.uid].emit('receive private message', data);
+                    }else{
+                        let tip =Data[0].tips
+                        tip++
+                        Chat.updateOne({_id:Data[0]._id},{tips:tip})
+                        .then((data2)=>{
+                           // console.log(data2)
+                        })
+                    }
+                })
+            })
+           
         })
         //用户离开
         socket.on('disconnection', function(){

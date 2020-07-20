@@ -82,6 +82,28 @@ router.post('/login',(req,res)=>{
     }
 })
 
+router.post('/search',(req,res)=>{
+    //获取数据
+    //数据处理
+    //返回数据
+    let {userId} =req.body
+    if(!userId) {
+        return res.send({code:-1,msg:"参数错误"})
+    }else{
+        User.find({_id: userId})
+        .then((data)=>{
+            if(data.length>0){
+                res.send({code:0, msg:'查询成功',userInfo:data})
+            }else{
+                res.send({code:-1, msg:'查询失败'})
+            }
+        })
+        .catch((err)=>{
+            res.send({code:-1, msg:'内部错误'})
+        })
+    }
+})
+
 //发送邮箱验证码
 router.post('/getMailCode',(req,res)=>{
     let {mail} =req.body
@@ -110,6 +132,7 @@ router.get('/wxlogin',(req,res)=>{
     const appid ='wxb2ea0e5d47967e74'
     appsecret ='023416cb76bb841c4455c6d174c4221c'
     const code =req.query.code
+    console.log(code)
     const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${appsecret}&js_code=${code}&grant_type=authorization_code`
     request(url, (err,response,body)=>{
         if(response.statusCode ===200){
@@ -122,4 +145,34 @@ router.get('/wxlogin',(req,res)=>{
    })
 })
 
+router.post('/searchByKeys',(req,res)=>{
+    //获取数据
+    //数据处理
+    //返回数据
+    let {keyWords} =req.body
+    console.log(keyWords)
+    if(!keyWords) {
+        User.find({})
+        .then((data)=>{
+            return res.send({code:0,msg:"查询成功",userList:data})
+        })
+    }else{
+        let key =keyWords.toString()
+        User.find({$or:[
+            {mail:{$regex:key}},
+            {user:{$regex:key}}
+            ]
+            })
+        .then((data)=>{
+            if(data.length>0){
+                res.send({code:0, msg:'查询成功',userList:data})
+            }else{
+                res.send({code:-1, msg:'查询失败',userList:[]})
+            }
+        })
+        .catch((err)=>{
+            res.send({code:-1, msg:'内部错误',userList:[]})
+        })
+    }
+})
 module.exports =router
